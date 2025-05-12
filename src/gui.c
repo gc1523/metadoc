@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include "../include/metadoc.h"
 
 static void on_encrypt_clicked(GtkButton *button, gpointer user_data) {
     GtkFileChooser *key_chooser = GTK_FILE_CHOOSER(g_object_get_data(G_OBJECT(button), "key_chooser"));
@@ -11,7 +12,7 @@ static void on_encrypt_clicked(GtkButton *button, gpointer user_data) {
         g_print("Encrypting...\n");
         g_print("Key File: %s\n", file1);
         g_print("Target File: %s\n", file2);
-        // TODO: ENCRYPT THIS STUFF
+        encrypt(file1, file2);
     } else {
         g_print("Please select both files.\n");
     }
@@ -31,7 +32,11 @@ static void on_decrypt_clicked(GtkButton *button, gpointer user_data) {
         g_print("Decrypting...\n");
         g_print("Key File: %s\n", file1);
         g_print("Target File: %s\n", file2);
-        // TODO: DECRYPT THIS STUFF
+        // NOTE: this is currently dangerous asf, as we arent copying the file
+        // to a temp file, and then decrypting it, we are overwriting the original
+        // file, which is not good. probably best to write to a temp file, and then
+        // rename it to the original file name after decryption. Then delete the original. 😈👿
+        decrypt(file1, file2);
     } else {
         g_print("Please select both files.\n");
     }
@@ -49,17 +54,27 @@ int main(int argc, char *argv[]) {
     gtk_window_set_default_size(GTK_WINDOW(window), 600, 400);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
+    // Colours (Wow)
+    GtkCssProvider *css_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(css_provider,
+        "window { background-color:rgb(127, 155, 212); }",
+        -1, NULL);
+
+    GtkStyleContext *context = gtk_widget_get_style_context(window);
+    gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+
+
     // Layout container
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_set_border_width(GTK_CONTAINER(box), 10);
     gtk_container_add(GTK_CONTAINER(window), box);
 
     // Label for File chooser 1
-    GtkWidget *key_label = gtk_label_new("Choose the file to encrypt:");
+    GtkWidget *key_label = gtk_label_new("Choose the file to encrypt/decrypt:");
     gtk_box_pack_start(GTK_BOX(box), key_label, FALSE, FALSE, 0);
 
     // File chooser 1
-    GtkWidget *key_chooser = gtk_file_chooser_button_new("Select file to encrypt", GTK_FILE_CHOOSER_ACTION_OPEN);
+    GtkWidget *key_chooser = gtk_file_chooser_button_new("Select file to encrypt/decrypt", GTK_FILE_CHOOSER_ACTION_OPEN);
     gtk_box_pack_start(GTK_BOX(box), key_chooser, FALSE, FALSE, 0);
 
     // Label for File chooser 2
