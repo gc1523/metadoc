@@ -4,6 +4,7 @@
 static void on_encrypt_clicked(GtkButton *button, gpointer user_data) {
     GtkFileChooser *key_chooser = GTK_FILE_CHOOSER(g_object_get_data(G_OBJECT(button), "key_chooser"));
     GtkFileChooser *target_chooser = GTK_FILE_CHOOSER(g_object_get_data(G_OBJECT(button), "target_chooser"));
+    GtkLabel *status_label = GTK_LABEL(g_object_get_data(G_OBJECT(button), "status_label"));
 
     char *file1 = gtk_file_chooser_get_filename(key_chooser);
     char *file2 = gtk_file_chooser_get_filename(target_chooser);
@@ -13,8 +14,11 @@ static void on_encrypt_clicked(GtkButton *button, gpointer user_data) {
         g_print("Key File: %s\n", file1);
         g_print("Target File: %s\n", file2);
         encrypt(file1, file2);
+
+        gtk_label_set_text(status_label, "File Encrypted!");
     } else {
         g_print("Please select both files.\n");
+        gtk_label_set_text(status_label, "Please select both files.");
     }
 
     g_free(file1);
@@ -24,6 +28,7 @@ static void on_encrypt_clicked(GtkButton *button, gpointer user_data) {
 static void on_decrypt_clicked(GtkButton *button, gpointer user_data) {
     GtkFileChooser *key_chooser = GTK_FILE_CHOOSER(g_object_get_data(G_OBJECT(button), "key_chooser"));
     GtkFileChooser *target_chooser = GTK_FILE_CHOOSER(g_object_get_data(G_OBJECT(button), "target_chooser"));
+    GtkLabel *status_label = GTK_LABEL(g_object_get_data(G_OBJECT(button), "status_label"));
 
     char *file1 = gtk_file_chooser_get_filename(key_chooser);
     char *file2 = gtk_file_chooser_get_filename(target_chooser);
@@ -32,13 +37,12 @@ static void on_decrypt_clicked(GtkButton *button, gpointer user_data) {
         g_print("Decrypting...\n");
         g_print("Key File: %s\n", file1);
         g_print("Target File: %s\n", file2);
-        // NOTE: this is currently dangerous asf, as we arent copying the file
-        // to a temp file, and then decrypting it, we are overwriting the original
-        // file, which is not good. probably best to write to a temp file, and then
-        // rename it to the original file name after decryption. Then delete the original. 😈👿
         decrypt(file1, file2);
+
+        gtk_label_set_text(status_label, "File Decrypted!");
     } else {
         g_print("Please select both files.\n");
+        gtk_label_set_text(status_label, "Please select both files.");
     }
 
     g_free(file1);
@@ -63,7 +67,6 @@ int main(int argc, char *argv[]) {
     GtkStyleContext *context = gtk_widget_get_style_context(window);
     gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
 
-
     // Layout container
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_set_border_width(GTK_CONTAINER(box), 10);
@@ -85,27 +88,33 @@ int main(int argc, char *argv[]) {
     GtkWidget *target_chooser = gtk_file_chooser_button_new("Select key file", GTK_FILE_CHOOSER_ACTION_OPEN);
     gtk_box_pack_start(GTK_BOX(box), target_chooser, FALSE, FALSE, 0);
 
+    // Status Label
+    GtkWidget *status_label = gtk_label_new("");
+    gtk_box_pack_start(GTK_BOX(box), status_label, FALSE, FALSE, 0);
+
     // Horizontal box for buttons
     GtkWidget *button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
     gtk_box_pack_end(GTK_BOX(box), button_box, FALSE, FALSE, 0);
 
     // Encrypt Button
     GtkWidget *encrypt_button = gtk_button_new_with_label("Encrypt");
-    gtk_widget_set_hexpand(encrypt_button, TRUE); // Make the button expand horizontally
+    gtk_widget_set_hexpand(encrypt_button, TRUE);
     gtk_box_pack_start(GTK_BOX(button_box), encrypt_button, TRUE, TRUE, 0);
 
     // Decrypt Button
     GtkWidget *decrypt_button = gtk_button_new_with_label("Decrypt");
-    gtk_widget_set_hexpand(decrypt_button, TRUE); // Make the button expand horizontally
+    gtk_widget_set_hexpand(decrypt_button, TRUE); 
     gtk_box_pack_start(GTK_BOX(button_box), decrypt_button, TRUE, TRUE, 0);
 
-    // file chooser callback shii
+    // Pass file choosers and status label to callback via object data
     g_object_set_data(G_OBJECT(encrypt_button), "key_chooser", key_chooser);
     g_object_set_data(G_OBJECT(encrypt_button), "target_chooser", target_chooser);
+    g_object_set_data(G_OBJECT(encrypt_button), "status_label", status_label);
     g_signal_connect(encrypt_button, "clicked", G_CALLBACK(on_encrypt_clicked), NULL);
 
     g_object_set_data(G_OBJECT(decrypt_button), "key_chooser", key_chooser);
     g_object_set_data(G_OBJECT(decrypt_button), "target_chooser", target_chooser);
+    g_object_set_data(G_OBJECT(decrypt_button), "status_label", status_label);
     g_signal_connect(decrypt_button, "clicked", G_CALLBACK(on_decrypt_clicked), NULL);
 
     gtk_widget_show_all(window);
